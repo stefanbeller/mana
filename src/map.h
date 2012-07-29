@@ -23,6 +23,7 @@
 #define MAP_H
 
 #include "actor.h"
+#include "resources/cell.h"
 #include "position.h"
 #include "properties.h"
 
@@ -98,18 +99,20 @@ class MapLayer
         /**
          * Set tile image, with x and y in layer coordinates.
          */
-        void setTile(int x, int y, Image *img);
+        void setTile(int x, int y, Cell c);
 
         /**
          * Set tile image with x + y * width already known.
          */
-        void setTile(int index, Image *img) { mTiles[index] = img; }
+        void setTile(int index, Cell c) { mCells[index] = c; }
 
         /**
          * Get tile image, with x and y in layer coordinates.
          */
-        Image *getTile(int x, int y) const
-        { return mTiles[x + y * mWidth]; }
+        Cell &getCell(int x, int y) const
+        { return mCells[x + y * mWidth]; }
+
+        Cell &getCell(int index) { return mCells[index]; }
 
         /**
          * Draws this layer to the given graphics context. The coordinates are
@@ -149,7 +152,7 @@ class MapLayer
         int mX, mY;
         int mWidth, mHeight;
         bool mIsFringeLayer;    /**< Whether the actors are drawn. */
-        Image **mTiles;
+        Cell *mCells;
         Map *mMap;              /** The mother map pointer */
 };
 

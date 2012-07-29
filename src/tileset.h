@@ -31,9 +31,11 @@ class Tileset : public ImageSet
 {
     public:
         Tileset(Image *img, int w, int h, unsigned firstGid,
-                int margin, int spacing):
+                int margin, int spacing, int tileOffsetX, int tileOffsetY):
             ImageSet(img, w, h, margin, spacing),
-            mFirstGid(firstGid)
+            mFirstGid(firstGid),
+            mTileOffsetX(tileOffsetX),
+            mTileOffsetY(tileOffsetY)
         {
         }
 
@@ -45,8 +47,16 @@ class Tileset : public ImageSet
             return mFirstGid;
         }
 
+        int tileOffsetX() const
+        { return mTileOffsetX; }
+
+        int tileOffsetY() const
+        { return mTileOffsetY; }
+
     private:
         unsigned mFirstGid;
+        int mTileOffsetX;
+        int mTileOffsetY;
 };
 
 #endif // TILESET_H

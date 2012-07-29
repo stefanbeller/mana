@@ -88,7 +88,7 @@ void TileAnimation::update(int ticks)
         for (std::list<std::pair<MapLayer*, int> >::iterator i =
              mAffected.begin(); i != mAffected.end(); i++)
         {
-            i->first->setTile(i->second, img);
+            i->first->getCell(i->second).image = img;
         }
         mLastImage = img;
     }
@@ -102,18 +102,17 @@ MapLayer::MapLayer(int x, int y, int width, int height, bool isFringeLayer,
     mMap(map)
 {
     const int size = mWidth * mHeight;
-    mTiles = new Image*[size];
-    std::fill_n(mTiles, size, (Image*) 0);
+    mCells = new Cell[size];
 }
 
 MapLayer::~MapLayer()
 {
-    delete[] mTiles;
+    delete[] mCells;
 }
 
-void MapLayer::setTile(int x, int y, Image *img)
+void MapLayer::setTile(int x, int y, Cell c)
 {
-    setTile(x + y * mWidth, img);
+    setTile(x + y * mWidth, c);
 }
 
 void MapLayer::drawOrtho(Graphics *graphics,
@@ -159,8 +158,8 @@ void MapLayer::drawOrtho(Graphics *graphics,
 
             for (int x = startX; x < endX; x++)
             {
-                Image *img = getTile(x, y);
-                if (img)
+                Cell cell = getCell(x, y);
+                if (Image *img = cell.image)
                 {
                     const int px = (x * mMap->getTileWidth()) + dx;
                     const int py = py0 - img->getHeight();
@@ -226,9 +225,13 @@ void MapLayer::drawIso(Graphics *graphics,
             if (j >= mMap->getHeight() || i < 0) continue;
             if (j < 0 || i >= mMap->getWidth()) break;
 
-            Image *img = getTile(i, j);
-            if (img)
-                graphics->drawImage(img, px0 + dx, py0 + dy - img->getHeight());
+            Cell cell = getCell(i, j);
+            if (Image *img = cell.image)
+            {
+                const int px = px0 + dx + cell.tileset->tileOffsetX();
+                const int py = py0 + dy - img->getHeight() + cell.tileset->tileOffsetY();
+                graphics->drawImage(img, px, py);
+            }
         }
         j += tiles_width;
         i -= tiles_width;
@@ -261,7 +264,8 @@ void MapLayer::draw(Graphics *graphics,
 
 int MapLayer::getTileDrawWidth(int x1, int y1, int endX, int &width) const
 {
-    Image *img1 = getTile(x1, y1);
+    const Cell cell = getCell(x1, y1);
+    const Image *img1 = cell.image;
     int c = 0;
     width = img1->getWidth();
 
@@ -271,7 +275,8 @@ int MapLayer::getTileDrawWidth(int x1, int y1, int endX, int &width) const
 
     for (int x = x1 + 1; x < endX; x++)
     {
-        Image *img = getTile(x, y1);
+        const Cell cell = getCell(x, y1);
+        const Image *img = cell.image;
         if (img != img1)
             break;
         c++;

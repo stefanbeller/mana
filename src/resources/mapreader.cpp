@@ -238,12 +238,16 @@ static void setTile(Map *map, MapLayer *layer, int x, int y, unsigned gid)
              FlippedVerticallyFlag |
              FlippedAntiDiagonallyFlag);
 
-    const Tileset * const set = map->getTilesetWithGid(gid);
+    Tileset *set = map->getTilesetWithGid(gid);
     if (layer)
     {
         // Set regular tile on a layer
         Image * const img = set ? set->get(gid - set->getFirstGid()) : 0;
-        layer->setTile(x, y, img);
+        if (img)
+        {
+            Cell cell(set, img);
+            layer->setTile(x, y, cell);
+        }
     }
     else
     {
@@ -464,6 +468,10 @@ Tileset *MapReader::readTileset(xmlNodePtr node, const std::string &path,
     const int tw = XML::getProperty(node, "tilewidth", map->getTileWidth());
     const int th = XML::getProperty(node, "tileheight", map->getTileHeight());
 
+    xmlNodePtr tileOffsetNode = XML::findFirstChildByName(node, "tileoffset");
+    const int tileOffsetX = tileOffsetNode ? XML::getProperty(tileOffsetNode, "x", 0): 0;
+    const int tileOffsetY = tileOffsetNode ? XML::getProperty(tileOffsetNode, "y", 0): 0;
+
     for_each_xml_child_node(childNode, node)
     {
         if (xmlStrEqual(childNode->name, BAD_CAST "image"))
@@ -480,7 +488,7 @@ Tileset *MapReader::readTileset(xmlNodePtr node, const std::string &path,
                 if (tilebmp)
                 {
                     set = new Tileset(tilebmp, tw, th, firstGid, margin,
-                                      spacing);
+                                      spacing, tileOffsetX, tileOffsetY);
                     tilebmp->decRef();
                 }
                 else
