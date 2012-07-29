@@ -126,6 +126,20 @@ class MapLayer
                   const Actors &actors,
                   int debugFlags) const;
 
+        void drawIso(Graphics *graphics,
+                     int startX, int startY,
+                     int endX, int endY,
+                     int scrollX, int scrollY,
+                     const Actors &actors,
+                     int debugFlags) const;
+
+        void drawOrtho(Graphics *graphics,
+                       int startX, int startY,
+                       int endX, int endY,
+                       int scrollX, int scrollY,
+                       const Actors &actors,
+                       int debugFlags) const;
+
         bool isFringeLayer() const
         { return mIsFringeLayer; }
 
@@ -145,6 +159,13 @@ class MapLayer
 class Map : public Properties
 {
     public:
+        enum Orientation
+        {
+            MAP_UNKNOWN = -1,
+            MAP_ORTHOGONAL,
+            MAP_ISOMETRIC
+        };
+
         enum BlockType
         {
             BLOCKTYPE_NONE = -1,
@@ -179,7 +200,7 @@ class Map : public Properties
         /**
          * Constructor, taking map and tile size as parameters.
          */
-        Map(int width, int height, int tileWidth, int tileHeight);
+        Map(Orientation orientation, int width, int height, int tileWidth, int tileHeight);
 
         ~Map();
 
@@ -335,6 +356,8 @@ class Map : public Properties
          */
         TileAnimation *getAnimationForGid(int gid) const;
 
+        Orientation orientation() const { return mOrientation; }
+
     protected:
         friend class Actor;
 
@@ -415,6 +438,7 @@ class Map : public Properties
 
         std::map<int, TileAnimation*> mTileAnimations;
 
+        Orientation mOrientation;
 };
 
 #endif

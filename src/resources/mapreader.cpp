@@ -106,6 +106,11 @@ Map *MapReader::readMap(xmlNodePtr node, const std::string &path)
     const int tilew = XML::getProperty(node, "tilewidth", -1);
     const int tileh = XML::getProperty(node, "tileheight", -1);
 
+    const std::string orientation = XML::getProperty(node, "orientation", "orthogonal");
+    const Map::Orientation orient = (orientation == "orthogonal") ? Map::MAP_ORTHOGONAL :
+                                    (orientation == "isometric") ? Map::MAP_ISOMETRIC :
+                                     Map::MAP_UNKNOWN;
+
     if (tilew < 0 || tileh < 0)
     {
         logger->log("MapReader: Warning: "
@@ -114,7 +119,7 @@ Map *MapReader::readMap(xmlNodePtr node, const std::string &path)
         return 0;
     }
 
-    Map *map = new Map(w, h, tilew, tileh);
+    Map *map = new Map(orient, w, h, tilew, tileh);
 
     for_each_xml_child_node(childNode, node)
     {

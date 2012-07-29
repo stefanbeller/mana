@@ -116,11 +116,11 @@ void MapLayer::setTile(int x, int y, Image *img)
     setTile(x + y * mWidth, img);
 }
 
-void MapLayer::draw(Graphics *graphics,
-                    int startX, int startY,
-                    int endX, int endY,
-                    int scrollX, int scrollY,
-                    const Actors &actors, int debugFlags) const
+void MapLayer::drawOrtho(Graphics *graphics,
+                         int startX, int startY,
+                         int endX, int endY,
+                         int scrollX, int scrollY,
+                         const Actors &actors, int debugFlags) const
 {
     startX -= mX;
     startY -= mY;
@@ -196,6 +196,69 @@ void MapLayer::draw(Graphics *graphics,
     }
 }
 
+void MapLayer::drawIso(Graphics *graphics,
+                         int startX, int startY,
+                         int endX, int endY,
+                         int scrollX, int scrollY,
+                         const Actors &actors, int debugFlags) const
+{
+    short int i;
+    short int j;
+
+    j = mMap->getHeight()/2;
+    i = -mMap->getHeight()/2;
+
+    // TODO: adjust according to mX, mY:
+    int dx = - scrollX;
+    int dy = - scrollY;
+
+    int py0 = 0;
+    int px0 = 0;
+    // TODO: paint only those tiles which are actually on screen.
+    for (unsigned short y = 2 * mMap->getHeight(); y; --y)
+    {
+        unsigned short tiles_width = 0;
+        for (unsigned short x = mMap->getWidth(); x ; --x)
+        {
+            --j; ++i;
+            ++tiles_width;
+            px0 += mMap->getTileWidth();
+            if (j >= mMap->getHeight() || i < 0) continue;
+            if (j < 0 || i >= mMap->getWidth()) break;
+
+            Image *img = getTile(i, j);
+            if (img)
+                graphics->drawImage(img, px0 + dx, py0 + dy - img->getHeight());
+        }
+        j += tiles_width;
+        i -= tiles_width;
+        px0 -= tiles_width * mMap->getTileWidth();
+        if (y % 2)
+        {
+            i++;
+            px0 += mMap->getTileWidth()/2;
+        }
+        else
+        {
+            j++;
+            px0 -= mMap->getTileWidth()/2;
+        }
+        py0 += mMap->getTileHeight()/2;
+    }
+}
+
+void MapLayer::draw(Graphics *graphics,
+                    int startX, int startY,
+                    int endX, int endY,
+                    int scrollX, int scrollY,
+                    const Actors &actors, int debugFlags) const
+{
+    if (mMap->orientation() == Map::MAP_ORTHOGONAL)
+        drawOrtho(graphics, startX, startY, endX, endY, scrollX, scrollY, actors, debugFlags);
+    else if (mMap->orientation() == Map::MAP_ISOMETRIC)
+        drawIso(graphics, startX, startY, endX, endY, scrollX, scrollY, actors, debugFlags);
+}
+
 int MapLayer::getTileDrawWidth(int x1, int y1, int endX, int &width) const
 {
     Image *img1 = getTile(x1, y1);
@@ -217,14 +280,15 @@ int MapLayer::getTileDrawWidth(int x1, int y1, int endX, int &width) const
     return c;
 }
 
-Map::Map(int width, int height, int tileWidth, int tileHeight):
+Map::Map(Orientation orientation, int width, int height, int tileWidth, int tileHeight):
     mWidth(width), mHeight(height),
     mTileWidth(tileWidth), mTileHeight(tileHeight),
     mMaxTileHeight(tileHeight),
     mMaxTileWidth(tileWidth),
     mDebugFlags(DEBUG_NONE),
     mOnClosedList(1), mOnOpenList(2),
-    mLastScrollX(0.0f), mLastScrollY(0.0f)
+    mLastScrollX(0.0f), mLastScrollY(0.0f),
+    mOrientation(orientation)
 {
     const int size = mWidth * mHeight;
 
